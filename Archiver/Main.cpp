@@ -3,6 +3,7 @@
 #include <fstream>
 
 #include "BinaryFile.h"
+#include "BinaryFileStructure.h"
 
 #ifdef _DEBUG
 #include <crtdbg.h>
@@ -13,7 +14,9 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
+	BinaryFile::encodeBinaryFile(L"test.txt", L"test.bin");
 	
+	BinaryFile::decodeBinaryFile(L"test.bin");
 
 	return 0;
 }

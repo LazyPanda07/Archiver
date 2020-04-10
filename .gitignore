@@ -36,3 +36,8 @@ Release/
 Debug/
 x64/
 .vs/
+
+# Other
+*.bin
+*.txt
+*.di

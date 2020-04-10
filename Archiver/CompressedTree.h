@@ -19,7 +19,7 @@ private:
 
 		node(node* left, node* right);
 
-	}*root;
+	}* root;
 	std::map<char, std::vector<char>> encodeCodes;
 	std::map<std::vector<char>, char> decodeCodes;
 	std::vector<node*> allSymbols;
@@ -34,7 +34,7 @@ private:
 public:
 	CompressedTree();
 
-	std::vector<char> encode(const std::vector<char>& fileData);
+	std::pair<std::vector<char>, std::vector<size_t>> encode(const std::vector<char>& fileData, const std::vector<size_t>& sizes);
 
 	std::vector<char> decode(const std::vector<char>& fileData, short importantBitsCount);
 

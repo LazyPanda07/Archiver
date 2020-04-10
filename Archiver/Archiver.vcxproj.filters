@@ -24,12 +24,18 @@
     <ClCompile Include="BinaryFile.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="BinaryFileStructure.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CompressedTree.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
     <ClInclude Include="BinaryFile.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="BinaryFileStructure.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>

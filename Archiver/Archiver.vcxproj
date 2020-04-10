@@ -144,11 +144,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BinaryFile.cpp" />
+    <ClCompile Include="BinaryFileStructure.cpp" />
     <ClCompile Include="CompressedTree.cpp" />
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BinaryFile.h" />
+    <ClInclude Include="BinaryFileStructure.h" />
     <ClInclude Include="CompressedTree.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

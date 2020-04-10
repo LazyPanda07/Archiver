@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <stack>
 
+#include "BinaryFileStructure.h"
+
 using namespace std;
 
 CompressedTree::node::node(char symbol) : symbol(symbol), isParent(false), left(nullptr), right(nullptr), parent(nullptr), bit(false)
@@ -71,7 +73,7 @@ CompressedTree::CompressedTree() : root(nullptr)
 
 }
 
-vector<char> CompressedTree::encode(const vector<char>& fileData)
+pair<vector<char>, vector<size_t>> CompressedTree::encode(const vector<char>& fileData, const vector<size_t>& sizes)
 {
 	map<char, size_t> entries;
 
@@ -124,11 +126,17 @@ vector<char> CompressedTree::encode(const vector<char>& fileData)
 
 	this->buildCodes();
 
-	vector<char> res;
+	pair<vector<char>, vector<size_t>> res;
 
-	for (auto&& i : fileData)
+	for (size_t i = 0, j = 0; i < fileData.size(); i++)
 	{
-		res.insert(end(res), begin(encodeCodes[i]), end(encodeCodes[i]));
+		if (i == sizes[j] - 1)
+		{
+			res.second.push_back(res.first.size());
+			j++;
+		}
+
+		res.first.insert(end(res.first), begin(encodeCodes[fileData[i]]), end(encodeCodes[fileData[i]]));
 	}
 
 	return res;
@@ -145,7 +153,7 @@ void print(char c)
 	printf("\n");
 }
 
-vector<char> CompressedTree::decode(const vector<char>& fileData,short importantBitsCount)
+vector<char> CompressedTree::decode(const vector<char>& fileData, short importantBitsCount)
 {
 	vector<char> res;
 	vector<char> data;

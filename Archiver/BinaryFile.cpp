@@ -7,40 +7,12 @@
 #include <filesystem>
 
 #include "CompressedTree.h"
+#include "BinaryFileStructure.h"
 
 using namespace std;
 
 namespace BinaryFile
 {
-	BinaryFileStructure::BinaryFileStructure(short importantBitsCount, unsigned __int64 sizeInBytes) : importantBitsCount(importantBitsCount), sizeInBytes(sizeInBytes)
-	{
-		memset(fileName, '\0', sizeof(fileName));
-		memset(filePath, '\0', sizeof(filePath));
-	}
-
-	BinaryFileStructure::BinaryFileStructure(short importantBitsCount, const std::wstring& fileName, unsigned __int64 sizeInBytes, const std::wstring* const filePath) : BinaryFileStructure(importantBitsCount, sizeInBytes)
-	{
-		if (fileName.size() > 15)
-		{
-			return;
-		}
-
-		if (filePath && filePath->size() > 10)
-		{
-			return;
-		}
-
-		wmemcpy(this->fileName, fileName.data(), fileName.size());
-
-		if (filePath)
-		{
-			wmemcpy(this->filePath, filePath->data(), filePath->size());
-		}
-
-		this->fileName[15] = L'\0';
-		this->filePath[10] = L'\0';
-	}
-
 	void encodeBinaryFile(const wstring& binaryFileNameIn, const wstring& binaryFileNameOut)
 	{
 		map<char, size_t> entries;
@@ -71,7 +43,7 @@ namespace BinaryFile
 		in.close();
 		data.~vector();
 
-		vector<char> code = tree.encode(fileData);
+		pair<vector<char>, vector<size_t>> code = tree.encode(fileData, { fileData.size() });	//all files code - size of each file
 		map<char, vector<char>> codes = tree.getAllCodes();
 
 		dictionary.open(dictionaryName);
@@ -86,14 +58,14 @@ namespace BinaryFile
 		}
 		dictionary.close();
 
-		BinaryFileStructure file(code.size() % CHAR_BIT, binaryFileNameIn, code.size() / CHAR_BIT);
+		BinaryFileStructure file(code.first.size()% CHAR_BIT, binaryFileNameIn, code.first.size() / CHAR_BIT);
 
 		out.open(binaryFileNameOut, ios::binary);
 		out.write(reinterpret_cast<const char*>(&file), sizeof(BinaryFileStructure));
 		vector<char> temp;
-		for (size_t i = 0; i < code.size(); i++)
+		for (size_t i = 0; i < code.first.size(); i++)
 		{
-			temp.push_back(code[i]);
+			temp.push_back(code.first[i]);
 
 			if (temp.size() == CHAR_BIT)
 			{
@@ -106,12 +78,12 @@ namespace BinaryFile
 				out << oneByte;
 				temp.clear();
 			}
-			else if (i + 1 == code.size())
+			else if (i + 1 == code.first.size())
 			{
 				char oneByte = 0;
 				int mask = 128;
 
-				for (int j = temp.size() - 1; j >= 0; j--, mask >>= 1)
+				for (size_t j = 0; j < temp.size(); j++, mask >>= 1)
 				{
 					oneByte += ((temp[j] ? 255 : 0) & mask);
 				}
