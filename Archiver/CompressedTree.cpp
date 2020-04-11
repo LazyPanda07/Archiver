@@ -126,7 +126,7 @@ pair<vector<char>, vector<size_t>> CompressedTree::encode(const vector<char>& fi
 
 	this->buildCodes();
 
-	pair<vector<char>, vector<size_t>> res;
+	pair<vector<char>, vector<size_t>> res = make_pair<vector<char>, vector<size_t>>({}, { 0 });
 
 	for (size_t i = 0, j = 0; i < fileData.size(); i++)
 	{
@@ -138,6 +138,8 @@ pair<vector<char>, vector<size_t>> CompressedTree::encode(const vector<char>& fi
 
 		res.first.insert(end(res.first), begin(encodeCodes[fileData[i]]), end(encodeCodes[fileData[i]]));
 	}
+
+	res.second.pop_back();
 
 	return res;
 }

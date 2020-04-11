@@ -1,10 +1,11 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 namespace BinaryFile
 {
-	void encodeBinaryFile(const std::wstring& binaryFileNameIn, const std::wstring& binaryFileNameOut);
+	void encodeBinaryFile(const std::vector<std::wstring>& binaryFileNameIn, const std::wstring& binaryFileNameOut);
 
 	void decodeBinaryFile(const std::wstring& binaryFileName);
 }
