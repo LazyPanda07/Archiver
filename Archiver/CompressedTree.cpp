@@ -18,10 +18,10 @@ CompressedTree::node::node(node* left, node* right) : symbol(NULL), isParent(tru
 
 }
 
-vector<char> CompressedTree::getBits(char c)
+array<char, 8> CompressedTree::getBits(char c)
 {
 	int mask = 128;
-	vector<char> res(8);
+	array<char, 8> res;
 
 	for (size_t i = 0; i < CHAR_BIT; i++, mask >>= 1)
 	{
@@ -130,7 +130,7 @@ pair<vector<char>, vector<size_t>> CompressedTree::encode(const vector<char>& fi
 
 	for (size_t i = 0, j = 0; i < fileData.size(); i++)
 	{
-		if (i == sizes[j] - 1)
+		if (i == sizes[j])
 		{
 			res.second.push_back(res.first.size());
 			j++;
@@ -138,8 +138,6 @@ pair<vector<char>, vector<size_t>> CompressedTree::encode(const vector<char>& fi
 
 		res.first.insert(end(res.first), begin(encodeCodes[fileData[i]]), end(encodeCodes[fileData[i]]));
 	}
-
-	res.second.pop_back();
 
 	return res;
 }
@@ -162,7 +160,7 @@ vector<char> CompressedTree::decode(const vector<char>& fileData, short importan
 
 	for (auto& i : fileData)
 	{
-		vector<char> tem = this->getBits(i);
+		array<char, 8> tem = this->getBits(i);
 		data.insert(end(data), begin(tem), end(tem));
 	}
 

@@ -127,21 +127,10 @@ namespace BinaryFile
 		CompressedTree tree;
 		vector<char> code;
 		ifstream in;
+		ofstream out;
 		ifstream dictionary;
 		wstring dictionaryName(begin(binaryFileName), begin(binaryFileName) + binaryFileName.rfind('.'));
-		BinaryFileStructure file;
 		dictionaryName += L".di";
-
-		in.open(binaryFileName, ios::binary);
-		in.read(reinterpret_cast<char*>(&file), sizeof(BinaryFileStructure));
-		while (!in.eof())
-		{
-			char c = 0;
-			in >> noskipws >> c;
-			code.push_back(c);
-		}
-		code.pop_back();
-		in.close();
 
 		dictionary.open(dictionaryName);
 		while (true)
@@ -178,10 +167,23 @@ namespace BinaryFile
 
 		tree.setDecodeCodes(decodeCodes);
 
-		vector<char> res = tree.decode(code, file.importantBitsCount);
+		in.open(binaryFileName, ios::binary);
 
-		ofstream resultFile(file.fileName, ios::binary);
-		resultFile.write(res.data(), res.size());
-		resultFile.close();
+		while (!in.eof())
+		{
+			BinaryFileStructure file;
+			in.read(reinterpret_cast<char*>(&file), sizeof(BinaryFileStructure));
+			
+			vector<char> fileData(file.sizeInBytes);
+			in.read(fileData.data(), fileData.size());
+			
+			vector<char> resultFileData = tree.decode(fileData, file.importantBitsCount);
+
+			out.open(file.fileName, ios::binary);
+			out.write(resultFileData.data(), resultFileData.size());
+			out.close();
+		}
+
+		in.close();
 	}
 }

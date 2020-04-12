@@ -2,6 +2,7 @@
 
 #include <map>
 #include <vector>
+#include <array>
 
 class CompressedTree
 {
@@ -25,7 +26,7 @@ private:
 	std::vector<node*> allSymbols;
 
 private:
-	static std::vector<char> getBits(char c);
+	static std::array<char, 8> getBits(char c);
 
 	void print(node* value);
 

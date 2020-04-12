@@ -14,7 +14,7 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-	BinaryFile::encodeBinaryFile({ L"test.txt", L"test1.txt", L"test2.txt" }, L"test.bin");
+	BinaryFile::encodeBinaryFile({ L"advanced.dll", L"app.dll", L"base.dll" }, L"test.bin");
 
 	BinaryFile::decodeBinaryFile(L"test.bin");
 
