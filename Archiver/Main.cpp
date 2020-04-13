@@ -1,22 +1,20 @@
-#include <iostream>
-#include <vector>
-#include <fstream>
+#include "MainWindow.h"
 
-#include "BinaryFile.h"
-#include "BinaryFileStructure.h"
-
-#ifdef _DEBUG
-#include <crtdbg.h>
-#define _CRTDBG_MAP_ALLOC
-#endif
+#pragma comment (lib,"ArchieverL.lib")
 
 using namespace std;
 
-int main(int argc, char** argv)
+int __stdcall wWinMain(HINSTANCE, HINSTANCE, PWSTR, int)
 {
-	BinaryFile::encodeBinaryFile({ L"advanced.dll", L"app.dll", L"base.dll" }, L"test.bin");
+	UI::MainWindow& ref = UI::MainWindow::get();
 
-	BinaryFile::decodeBinaryFile(L"test.bin");
+	MSG msg = {};
+
+	while (GetMessageW(&msg, nullptr, NULL, NULL))
+	{
+		TranslateMessage(&msg);
+		DispatchMessageW(&msg);
+	}
 
 	return 0;
 }
