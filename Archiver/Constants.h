@@ -1,7 +1,7 @@
 #pragma once
 
-constexpr int mainWindowWidth = 800;
-constexpr int mainWindowHeight = 600;
+constexpr int mainWindowWidth = 1024;
+constexpr int mainWindowHeight = 800;
 
 constexpr int topOffset = 50;
 
@@ -15,7 +15,9 @@ enum ButtonEvent : __int32
 {
 	addFileE=0xfff,
 	deleteFileE,
-	chooseFileE
+	chooseFileE,
+	encryptFilesE,
+	decryptFilesE
 };
 
 constexpr int initListBoxes = 0xffff;

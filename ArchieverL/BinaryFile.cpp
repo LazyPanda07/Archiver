@@ -173,6 +173,8 @@ namespace BinaryFile
 		{
 			BinaryFileStructure file;
 			in.read(reinterpret_cast<char*>(&file), sizeof(BinaryFileStructure));
+			wstring_view fileName = file.fileName;
+			fileName = fileName.substr(fileName.rfind('/') + 1);
 			
 			vector<char> fileData(file.sizeInBytes);
 			in.read(fileData.data(), fileData.size());

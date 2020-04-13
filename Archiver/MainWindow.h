@@ -10,9 +10,11 @@ namespace UI
 	private:
 		HWND window;
 
+		HWND chooseFileButton;
 		HWND addFileButton;
 		HWND deleteFileButton;
-		HWND chooseFileButton;
+		HWND encryptFilesButton;
+		HWND decryptFilesButton;
 
 		HWND availableFiles;
 		HWND addedFiles;

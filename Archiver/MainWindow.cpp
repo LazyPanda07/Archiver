@@ -1,10 +1,16 @@
 #include "MainWindow.h"
 
 #include <array>
+#include <string>
+#include <unordered_map>
 
 #include "Constants.h"
+#include "BinaryFile.h"
 
 using namespace std;
+
+static array<wchar_t, 256> fileNameBuffer{};
+static unordered_map<wstring, wstring> variants;	//file name - absolute path
 
 LRESULT __stdcall MainWindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
@@ -16,9 +22,15 @@ POINT centerCoordinates(LONG width, LONG height, HWND window = GetDesktopWindow(
 #pragma endregion
 
 #pragma region ButtonsEvents
-void addFileEvent(HWND availableListBox, HWND addedListBox);
+void chooseFileEvent(HWND availableListBox, HWND addedListBox);
 
 void deleteFileEvent(HWND availableListBox, HWND addedListBox);
+
+void addFileEvent(HWND availableListBox, HWND addedListBox);
+
+void encryptFilesEvent(HWND addedListBox);
+
+void decryptFilesEvent();
 
 #pragma endregion
 
@@ -73,16 +85,58 @@ namespace UI
 			nullptr
 		);
 
+		chooseFileButton = CreateWindowExW
+		(
+			NULL,
+			L"BUTTON",
+			L"Выбрать файл",
+			WS_CHILDWINDOW | WS_VISIBLE,
+			controlButtonsWidth, 0,
+			controlButtonsWidth, controlButtonsHeight,
+			window,
+			HMENU(chooseFileE),
+			nullptr,
+			nullptr
+		);
+
 		deleteFileButton = CreateWindowExW
 		(
 			NULL,
 			L"BUTTON",
 			L"Удалить файл",
 			WS_CHILDWINDOW | WS_VISIBLE,
-			controlButtonsWidth, 0,
+			controlButtonsWidth * 2, 0,
 			controlButtonsWidth, controlButtonsHeight,
 			window,
 			HMENU(deleteFileE),
+			nullptr,
+			nullptr
+		);
+
+		encryptFilesButton = CreateWindowExW
+		(
+			NULL,
+			L"BUTTON",
+			L"Архивировать файлы",
+			WS_CHILDWINDOW | WS_VISIBLE,
+			controlButtonsWidth * 3, 0,
+			controlButtonsWidth, controlButtonsHeight,
+			window,
+			HMENU(encryptFilesE),
+			nullptr,
+			nullptr
+		);
+
+		decryptFilesButton = CreateWindowExW
+		(
+			NULL,
+			L"BUTTON",
+			L"Извлечь файлы",
+			WS_CHILDWINDOW | WS_VISIBLE,
+			controlButtonsWidth * 4, 0,
+			controlButtonsWidth + 50, controlButtonsHeight,
+			window,
+			HMENU(decryptFilesE),
 			nullptr,
 			nullptr
 		);
@@ -147,6 +201,8 @@ namespace UI
 
 		for (auto&& i : it)
 		{
+			variants[i.path().filename().generic_wstring()] = i.path().generic_wstring();
+
 			SendMessageW(availableFiles, LB_ADDSTRING, NULL, reinterpret_cast<LPARAM>(i.path().filename().generic_wstring().data()));
 		}
 
@@ -181,8 +237,8 @@ namespace UI
 LRESULT __stdcall MainWindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	static HWND lastButtonClicked;
-	static HWND availableArea;
-	static HWND addedArea;
+	static HWND availableListBox;
+	static HWND addedListBox;
 
 	switch (msg)
 	{
@@ -199,14 +255,28 @@ LRESULT __stdcall MainWindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM
 
 		switch (wparam)
 		{
+		case chooseFileE:
+			chooseFileEvent(availableListBox, addedListBox);
+
+			break;
+
 		case addFileE:
-			SetFocus(availableArea);
-			addFileEvent(availableArea, addedArea);;
+			addFileEvent(availableListBox, addedListBox);;
 
 			break;
 
 		case deleteFileE:
-			deleteFileEvent(availableArea, addedArea);
+			deleteFileEvent(availableListBox, addedListBox);
+
+			break;
+
+		case encryptFilesE:
+			encryptFilesEvent(addedListBox);
+
+			break;
+
+		case decryptFilesE:
+			decryptFilesEvent();
 
 			break;
 		}
@@ -214,8 +284,8 @@ LRESULT __stdcall MainWindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM
 		return 0;
 
 	case initListBoxes:
-		availableArea = reinterpret_cast<HWND>(wparam);
-		addedArea = reinterpret_cast<HWND>(lparam);
+		availableListBox = reinterpret_cast<HWND>(wparam);
+		addedListBox = reinterpret_cast<HWND>(lparam);
 
 	default:
 		return DefWindowProcW(hwnd, msg, wparam, lparam);
@@ -243,10 +313,10 @@ POINT centerCoordinates(LONG width, LONG height, HWND window)
 	return { static_cast<LONG>(x - width * 0.5),static_cast<LONG>(y - height * 0.5) };
 }
 
-void addFileEvent(HWND availableListBox, HWND addedListBox)
+void chooseFileEvent(HWND availableListBox, HWND addedListBox)
 {
 	array<__int32, 1024> indices;
-	
+
 	LRESULT elements = SendMessageW(availableListBox, LB_GETSELITEMS, 1024, reinterpret_cast<LPARAM>(indices.data()));
 
 	if (elements != LB_ERR)
@@ -289,4 +359,96 @@ void deleteFileEvent(HWND availableListBox, HWND addedListBox)
 			SendMessageW(addedListBox, LB_DELETESTRING, indices[i], NULL);
 		}
 	}
+}
+
+void addFileEvent(HWND availableListBox, HWND addedListBox)
+{
+	OPENFILENAMEW file = {};
+
+	std::wstring temp = fileNameBuffer.data();
+
+	file.lStructSize = sizeof(OPENFILENAMEW);
+	file.hwndOwner = GetParent(availableListBox);
+	file.lpstrFile = fileNameBuffer.data();
+	file.lpstrFile[0] = L'\0';
+	file.nMaxFile = sizeof(fileNameBuffer);
+	file.lpstrFilter = L"Все файлы\0*.*\0\0";
+	file.nFilterIndex = 1;
+	file.lpstrFileTitle = nullptr;
+	file.nMaxFileTitle = 0;
+	file.lpstrInitialDir = nullptr;
+	file.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+	GetOpenFileNameW(&file);
+
+	std::wstring_view absolutePath = file.lpstrFile;
+	std::wstring_view fileName = absolutePath.substr(absolutePath.rfind(L'\\') + 1);
+
+	if (fileName == L"")
+	{
+		return;
+	}
+
+	variants[fileName.data()] = absolutePath;
+
+	SendMessageW(addedListBox, LB_ADDSTRING, NULL, reinterpret_cast<LPARAM>(fileName.data()));
+}
+
+void encryptFilesEvent(HWND addedListBox)
+{
+	LRESULT elements = SendMessageW(addedListBox, LB_GETCOUNT, NULL, NULL);
+
+	if (elements != LB_ERR)
+	{
+		vector<wstring> files;
+		files.reserve(elements);
+
+		for (size_t i = 0; i < elements; i++)
+		{
+			files.emplace_back(wstring());
+			LRESULT temSize = SendMessageW(addedListBox, LB_GETTEXTLEN, i, NULL);
+
+			files.back().resize(temSize);
+
+			SendMessageW(addedListBox, LB_GETTEXT, i, reinterpret_cast<LPARAM>(files[i].data()));
+		}
+
+		vector<wstring> fullPathFiles(elements);
+
+		for (size_t i = 0; i < elements; i++)
+		{
+			fullPathFiles[i] = variants.find(files[i])->second;
+		}
+
+		BinaryFile::encodeBinaryFile(fullPathFiles, L"test.bin");
+
+		MessageBoxW(GetParent(addedListBox), L"Архив успешно создан", L"Информация", MB_OK);
+	}
+}
+
+void decryptFilesEvent()
+{
+	OPENFILENAMEW file = {};
+
+	std::wstring temp = fileNameBuffer.data();
+
+	file.lStructSize = sizeof(OPENFILENAMEW);
+	file.hwndOwner = nullptr;
+	file.lpstrFile = fileNameBuffer.data();
+	file.lpstrFile[0] = L'\0';
+	file.nMaxFile = sizeof(fileNameBuffer);
+	file.lpstrFilter = L"Архивные файлы\0*.bin\0\0";
+	file.nFilterIndex = 1;
+	file.lpstrFileTitle = nullptr;
+	file.nMaxFileTitle = 0;
+	file.lpstrInitialDir = nullptr;
+	file.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+	GetOpenFileNameW(&file);
+
+	std::wstring fileName = file.lpstrFile;
+
+	BinaryFile::decodeBinaryFile(fileName);
+
+	MessageBoxW(nullptr, L"Извлечение прошло успешно", L"Информация", MB_OK);
 }
