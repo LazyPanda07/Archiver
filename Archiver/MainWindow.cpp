@@ -103,7 +103,7 @@ namespace UI
 		(
 			NULL,
 			L"BUTTON",
-			L"Удалить файл",
+			L"Убрать файл",
 			WS_CHILDWINDOW | WS_VISIBLE,
 			controlButtonsWidth * 2, 0,
 			controlButtonsWidth, controlButtonsHeight,
@@ -134,7 +134,7 @@ namespace UI
 			L"Извлечь файлы",
 			WS_CHILDWINDOW | WS_VISIBLE,
 			controlButtonsWidth * 4, 0,
-			controlButtonsWidth + 50, controlButtonsHeight,
+			controlButtonsWidth, controlButtonsHeight,
 			window,
 			HMENU(decryptFilesE),
 			nullptr,
@@ -201,9 +201,11 @@ namespace UI
 
 		for (auto&& i : it)
 		{
-			variants[i.path().filename().generic_wstring()] = i.path().generic_wstring();
+			filesystem::path path = i.path();
 
-			SendMessageW(availableFiles, LB_ADDSTRING, NULL, reinterpret_cast<LPARAM>(i.path().filename().generic_wstring().data()));
+			variants[path.filename().generic_wstring()] = path.generic_wstring();
+
+			SendMessageW(availableFiles, LB_ADDSTRING, NULL, reinterpret_cast<LPARAM>(path.filename().generic_wstring().data()));
 		}
 
 		SendMessageW(window, initListBoxes, reinterpret_cast<WPARAM>(availableFiles), reinterpret_cast<LPARAM>(addedFiles));
@@ -213,6 +215,13 @@ namespace UI
 	{
 		DestroyWindow(chooseFileButton);
 		DestroyWindow(deleteFileButton);
+		DestroyWindow(addFileButton);
+		DestroyWindow(encryptFilesButton);
+		DestroyWindow(decryptFilesButton);
+		DestroyWindow(availableFiles);
+		DestroyWindow(addedFiles);
+		DestroyWindow(availableArea);
+		DestroyWindow(addedArea);
 		DestroyWindow(window);
 	}
 
@@ -230,7 +239,17 @@ namespace UI
 
 	void MainWindow::resize()
 	{
+		RECT sizes;
 
+		GetClientRect(window, &sizes);
+
+		LONG width = sizes.right - sizes.left;
+		LONG height = sizes.bottom - sizes.top;
+
+		SetWindowPos(availableArea, HWND_BOTTOM, width / 4 - informationMessagesWidth / 2, topOffset, informationMessagesWidth, informationMessagesHeight, SWP_SHOWWINDOW);
+		SetWindowPos(addedArea, HWND_BOTTOM, width / 2 + width / 4 - informationMessagesWidth / 2, topOffset, informationMessagesWidth, informationMessagesHeight, SWP_SHOWWINDOW);
+		SetWindowPos(availableFiles, HWND_BOTTOM, 0, topOffset + informationMessagesHeight, width / 2, height, SWP_SHOWWINDOW);
+		SetWindowPos(addedFiles, HWND_BOTTOM, width / 2, topOffset + informationMessagesHeight, width / 2, height, SWP_SHOWWINDOW);
 	}
 }
 
@@ -239,9 +258,18 @@ LRESULT __stdcall MainWindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM
 	static HWND lastButtonClicked;
 	static HWND availableListBox;
 	static HWND addedListBox;
+	static UI::MainWindow* ptr = nullptr;
 
 	switch (msg)
 	{
+	case WM_SIZE:
+		if (ptr)
+		{
+			ptr->resize();
+		}
+
+		return 0;
+
 	case WM_DESTROY:
 		PostQuitMessage(0);
 
@@ -286,6 +314,13 @@ LRESULT __stdcall MainWindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM
 	case initListBoxes:
 		availableListBox = reinterpret_cast<HWND>(wparam);
 		addedListBox = reinterpret_cast<HWND>(lparam);
+
+		return 0;
+
+	case initMainWindowPtr:
+		ptr = reinterpret_cast<UI::MainWindow*>(wparam);
+
+		return 0;
 
 	default:
 		return DefWindowProcW(hwnd, msg, wparam, lparam);
@@ -389,7 +424,7 @@ void addFileEvent(HWND availableListBox, HWND addedListBox)
 		return;
 	}
 
-	variants[fileName.data()] = absolutePath;
+	variants.insert(make_pair(fileName, absolutePath));
 
 	SendMessageW(addedListBox, LB_ADDSTRING, NULL, reinterpret_cast<LPARAM>(fileName.data()));
 }
@@ -417,7 +452,7 @@ void encryptFilesEvent(HWND addedListBox)
 
 		for (size_t i = 0; i < elements; i++)
 		{
-			fullPathFiles[i] = variants.find(files[i])->second;
+			fullPathFiles[i] = variants[files[i]];
 		}
 
 		BinaryFile::encodeBinaryFile(fullPathFiles, L"test.bin");

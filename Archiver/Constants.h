@@ -8,7 +8,7 @@ constexpr int topOffset = 50;
 constexpr int controlButtonsWidth = 150;
 constexpr int controlButtonsHeight = 50;
 
-constexpr int informationMessagesWidth = 300;
+constexpr int informationMessagesWidth = 200;
 constexpr int informationMessagesHeight = 15;
 
 enum ButtonEvent : __int32
@@ -20,4 +20,5 @@ enum ButtonEvent : __int32
 	decryptFilesE
 };
 
+constexpr int initMainWindowPtr = 0xfffe;
 constexpr int initListBoxes = 0xffff;
