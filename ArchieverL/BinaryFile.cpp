@@ -63,9 +63,12 @@ namespace BinaryFile
 			}
 			dictionary << endl;
 		}
+
+		dictionary << "DICTIONARY END" << endl;
+
 		dictionary.close();
 
-		out.open(binaryFileNameOut, ios::binary);
+		dictionary.open(dictionaryName, ios::binary | ios::app);
 
 		size_t cur = 0;
 
@@ -84,7 +87,7 @@ namespace BinaryFile
 			
 			BinaryFileStructure file(currentFileSize % CHAR_BIT, binaryFilesNamesIn[i], currentFileSize % CHAR_BIT ? currentFileSize / CHAR_BIT + 1 : currentFileSize / CHAR_BIT);
 
-			out.write(reinterpret_cast<const char*>(&file), sizeof(BinaryFileStructure));
+			dictionary.write(reinterpret_cast<const char*>(&file), sizeof(BinaryFileStructure));
 
 			vector<char> temp;
 			for (size_t next = cur + currentFileSize; cur < next; cur++)
@@ -99,7 +102,7 @@ namespace BinaryFile
 						oneByte += temp[j] << k;
 					}
 
-					out << oneByte;
+					dictionary << oneByte;
 					temp.clear();
 				}
 				else if (cur + 1 == next)
@@ -112,13 +115,13 @@ namespace BinaryFile
 						oneByte += ((temp[j] ? 255 : 0) & mask);
 					}
 
-					out << oneByte;
+					dictionary << oneByte;
 					temp.clear();
 				}
 			}
 		}
 
-		out.close();
+		dictionary.close();
 	}
 
 	void decodeBinaryFile(const wstring& binaryFileName)
@@ -132,14 +135,17 @@ namespace BinaryFile
 		wstring dictionaryName(begin(binaryFileName), begin(binaryFileName) + binaryFileName.rfind('.'));
 		dictionaryName += L".di";
 
+		unsigned __int64 offset;
+
 		dictionary.open(dictionaryName);
 		while (true)
 		{
 			string tem;
 			getline(dictionary, tem);
 
-			if (tem == "")
+			if (tem == "DICTIONARY END")
 			{
+				offset = dictionary.tellg();
 				break;
 			}
 
@@ -167,7 +173,8 @@ namespace BinaryFile
 
 		tree.setDecodeCodes(decodeCodes);
 
-		in.open(binaryFileName, ios::binary);
+		in.open(dictionaryName, ios::binary);
+		in.seekg(offset, ios::beg);
 
 		while (!in.eof())
 		{

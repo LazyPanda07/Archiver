@@ -472,7 +472,7 @@ void decryptFilesEvent()
 	file.lpstrFile = fileNameBuffer.data();
 	file.lpstrFile[0] = L'\0';
 	file.nMaxFile = sizeof(fileNameBuffer);
-	file.lpstrFilter = L"Архивные файлы\0*.bin\0\0";
+	file.lpstrFilter = L"Архивные файлы\0*.di\0\0";
 	file.nFilterIndex = 1;
 	file.lpstrFileTitle = nullptr;
 	file.nMaxFileTitle = 0;
