@@ -8,7 +8,9 @@
 #include "CompressedTree.h"
 #include "BinaryFileStructure.h"
 
+#ifdef _DEBUG
 #include <iostream>
+#endif // _DEBUG
 
 using namespace std;
 
@@ -21,11 +23,8 @@ namespace BinaryFile
 		vector<size_t> sizes;
 		vector<char> data;
 		ifstream in;
-		ofstream dictionary;
 		ofstream out;
-		wstring dictionaryName(begin(binaryFileNameOut), begin(binaryFileNameOut) + binaryFileNameOut.rfind('.'));
 
-		dictionaryName += L".di";
 		sizes.reserve(binaryFilesNamesIn.size());
 
 		for (auto&& i : binaryFilesNamesIn)
@@ -53,22 +52,22 @@ namespace BinaryFile
 		pair<vector<char>, vector<size_t>> code = tree.encode(fileData, sizes);	//all files code - size of each file
 		map<char, vector<char>> codes = tree.getAllCodes();
 
-		dictionary.open(dictionaryName);
+		out.open(binaryFileNameOut);
 		for (auto i : codes)
 		{
-			dictionary << static_cast<int>(i.first) << " : ";
+			out << static_cast<int>(i.first) << " : ";
 			for (auto j : i.second)
 			{
-				dictionary << static_cast<int>(j);
+				out << static_cast<int>(j);
 			}
-			dictionary << endl;
+			out << endl;
 		}
 
-		dictionary << "DICTIONARY END" << endl;
+		out << "DICTIONARY END" << endl;
 
-		dictionary.close();
+		out.close();
 
-		dictionary.open(dictionaryName, ios::binary | ios::app);
+		out.open(binaryFileNameOut, ios::binary | ios::app);
 
 		size_t cur = 0;
 
@@ -87,7 +86,7 @@ namespace BinaryFile
 			
 			BinaryFileStructure file(currentFileSize % CHAR_BIT, binaryFilesNamesIn[i], currentFileSize % CHAR_BIT ? currentFileSize / CHAR_BIT + 1 : currentFileSize / CHAR_BIT);
 
-			dictionary.write(reinterpret_cast<const char*>(&file), sizeof(BinaryFileStructure));
+			out.write(reinterpret_cast<const char*>(&file), sizeof(BinaryFileStructure));
 
 			vector<char> temp;
 			for (size_t next = cur + currentFileSize; cur < next; cur++)
@@ -102,7 +101,7 @@ namespace BinaryFile
 						oneByte += temp[j] << k;
 					}
 
-					dictionary << oneByte;
+					out << oneByte;
 					temp.clear();
 				}
 				else if (cur + 1 == next)
@@ -115,13 +114,13 @@ namespace BinaryFile
 						oneByte += ((temp[j] ? 255 : 0) & mask);
 					}
 
-					dictionary << oneByte;
+					out << oneByte;
 					temp.clear();
 				}
 			}
 		}
 
-		dictionary.close();
+		out.close();
 	}
 
 	void decodeBinaryFile(const wstring& binaryFileName)
@@ -131,21 +130,17 @@ namespace BinaryFile
 		vector<char> code;
 		ifstream in;
 		ofstream out;
-		ifstream dictionary;
-		wstring dictionaryName(begin(binaryFileName), begin(binaryFileName) + binaryFileName.rfind('.'));
-		dictionaryName += L".di";
-
 		unsigned __int64 offset;
 
-		dictionary.open(dictionaryName);
+		in.open(binaryFileName);
 		while (true)
 		{
 			string tem;
-			getline(dictionary, tem);
+			getline(in, tem);
 
 			if (tem == "DICTIONARY END")
 			{
-				offset = dictionary.tellg();
+				offset = in.tellg();
 				break;
 			}
 
@@ -169,11 +164,11 @@ namespace BinaryFile
 
 			decodeCodes[temCode] = static_cast<char>(atoi(charCode.data()));
 		}
-		dictionary.close();
+		in.close();
 
 		tree.setDecodeCodes(decodeCodes);
 
-		in.open(dictionaryName, ios::binary);
+		in.open(binaryFileName, ios::binary);
 		in.seekg(offset, ios::beg);
 
 		while (!in.eof())

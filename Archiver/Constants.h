@@ -1,15 +1,15 @@
 #pragma once
 
-constexpr int mainWindowWidth = 1024;
-constexpr int mainWindowHeight = 800;
+inline constexpr int mainWindowWidth = 1024;
+inline constexpr int mainWindowHeight = 800;
 
-constexpr int topOffset = 50;
+inline constexpr int topOffset = 50;
 
-constexpr int controlButtonsWidth = 150;
-constexpr int controlButtonsHeight = 50;
+inline constexpr int controlButtonsWidth = 150;
+inline constexpr int controlButtonsHeight = 50;
 
-constexpr int informationMessagesWidth = 200;
-constexpr int informationMessagesHeight = 15;
+inline constexpr int informationMessagesWidth = 300;
+inline constexpr int informationMessagesHeight = 15;
 
 enum ButtonEvent : __int32
 {
@@ -20,5 +20,5 @@ enum ButtonEvent : __int32
 	decryptFilesE
 };
 
-constexpr int initMainWindowPtr = 0xfffe;
-constexpr int initListBoxes = 0xffff;
+inline constexpr int initMainWindowPtr = 0xfffe;
+inline constexpr int initListBoxes = 0xffff;

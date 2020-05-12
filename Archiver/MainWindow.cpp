@@ -173,7 +173,7 @@ namespace UI
 		(
 			NULL,
 			L"STATIC",
-			L"Область для выбора файлов",
+			L"Выбор файлов для архивирования",
 			WS_CHILDWINDOW | WS_VISIBLE | SS_CENTER,
 			width / 4 - informationMessagesWidth / 2, topOffset,
 			informationMessagesWidth, informationMessagesHeight,
@@ -187,7 +187,7 @@ namespace UI
 		(
 			NULL,
 			L"STATIC",
-			L"Область с уже выбранными файлами",
+			L"Файлы для архивирования",
 			WS_CHILDWINDOW | WS_VISIBLE | SS_CENTER,
 			width / 2 + width / 4 - informationMessagesWidth / 2, topOffset,
 			informationMessagesWidth, informationMessagesHeight,
@@ -455,9 +455,9 @@ void encryptFilesEvent(HWND addedListBox)
 			fullPathFiles[i] = variants[files[i]];
 		}
 
-		BinaryFile::encodeBinaryFile(fullPathFiles, L"test.bin");
+		BinaryFile::encodeBinaryFile(fullPathFiles, L"test.mfa");
 
-		MessageBoxW(GetParent(addedListBox), L"Архив успешно создан", L"Информация", MB_OK);
+		MessageBoxW(GetParent(addedListBox), L"Архив успешно создан", L"Сообщение", MB_OK);
 	}
 }
 
@@ -472,7 +472,7 @@ void decryptFilesEvent()
 	file.lpstrFile = fileNameBuffer.data();
 	file.lpstrFile[0] = L'\0';
 	file.nMaxFile = sizeof(fileNameBuffer);
-	file.lpstrFilter = L"Архивные файлы\0*.di\0\0";
+	file.lpstrFilter = L"Архивные файлы\0*.mfa\0\0";
 	file.nFilterIndex = 1;
 	file.lpstrFileTitle = nullptr;
 	file.nMaxFileTitle = 0;
@@ -485,5 +485,5 @@ void decryptFilesEvent()
 
 	BinaryFile::decodeBinaryFile(fileName);
 
-	MessageBoxW(nullptr, L"Извлечение прошло успешно", L"Информация", MB_OK);
+	MessageBoxW(nullptr, L"Извлечение прошло успешно", L"Сообщение", MB_OK);
 }
