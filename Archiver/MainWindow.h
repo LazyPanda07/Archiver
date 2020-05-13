@@ -15,12 +15,13 @@ namespace UI
 		HWND deleteFileButton;
 		HWND encryptFilesButton;
 		HWND decryptFilesButton;
+		HWND changeDirectoryButton;
 
-		HWND availableFiles;
-		HWND addedFiles;
+		HWND availableFiles;	//listbox
+		HWND addedFiles;		//listbox
 
-		HWND availableArea;
-		HWND addedArea;
+		HWND availableArea;		//static
+		HWND addedArea;			//static
 
 		std::filesystem::path currentDirectory;
 
@@ -40,5 +41,9 @@ namespace UI
 		HWND getHWND() const;
 
 		void resize();
+
+		void setCurrentDirectory(const std::wstring& path);
+
+		const std::filesystem::path& getCurrentDirectory() const;
 	};
 }

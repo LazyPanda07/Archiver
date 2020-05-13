@@ -5,7 +5,7 @@ inline constexpr int mainWindowHeight = 800;
 
 inline constexpr int topOffset = 50;
 
-inline constexpr int controlButtonsWidth = 150;
+inline constexpr int controlButtonsWidth = 160;
 inline constexpr int controlButtonsHeight = 50;
 
 inline constexpr int informationMessagesWidth = 300;
@@ -17,7 +17,8 @@ enum ButtonEvent : __int32
 	deleteFileE,
 	chooseFileE,
 	encryptFilesE,
-	decryptFilesE
+	decryptFilesE,
+	changeDirectoryE
 };
 
 inline constexpr int initMainWindowPtr = 0xfffe;

@@ -3,6 +3,7 @@
 #include <array>
 #include <string>
 #include <unordered_map>
+#include <shlobj.h>
 
 #include "Constants.h"
 #include "BinaryFile.h"
@@ -32,11 +33,13 @@ void encryptFilesEvent(HWND addedListBox);
 
 void decryptFilesEvent();
 
+void changeDirectory(UI::MainWindow& ref);
+
 #pragma endregion
 
 namespace UI
 {
-	MainWindow::MainWindow() : currentDirectory(filesystem::current_path())
+	MainWindow::MainWindow()
 	{
 		WNDCLASSEXW wnd = {};
 		POINT windowPos = centerCoordinates(mainWindowWidth, mainWindowHeight);
@@ -141,14 +144,28 @@ namespace UI
 			nullptr
 		);
 
+		changeDirectoryButton = CreateWindowExW
+		(
+			NULL,
+			L"BUTTON",
+			L"Изменить директорию",
+			WS_CHILDWINDOW | WS_VISIBLE,
+			controlButtonsWidth * 5, 0,
+			controlButtonsWidth, controlButtonsHeight,
+			window,
+			HMENU(changeDirectoryE),
+			nullptr,
+			nullptr
+		);
+
 		availableFiles = CreateWindowExW
 		(
 			WS_EX_CLIENTEDGE,
 			L"LISTBOX",
 			nullptr,
-			WS_CHILDWINDOW | WS_VISIBLE | LBS_SORT | LBS_EXTENDEDSEL | LBS_MULTIPLESEL,
+			WS_CHILDWINDOW | WS_VISIBLE | LBS_SORT | LBS_EXTENDEDSEL | LBS_MULTIPLESEL | WS_VSCROLL | LBS_NOINTEGRALHEIGHT,
 			0, topOffset + informationMessagesHeight,
-			width / 2, height,
+			width / 2, height - topOffset - informationMessagesHeight,
 			window,
 			HMENU(),
 			nullptr,
@@ -160,9 +177,9 @@ namespace UI
 			WS_EX_CLIENTEDGE,
 			L"LISTBOX",
 			nullptr,
-			WS_CHILDWINDOW | WS_VISIBLE | LBS_SORT | LBS_EXTENDEDSEL | LBS_MULTIPLESEL,
+			WS_CHILDWINDOW | WS_VISIBLE | LBS_SORT | LBS_EXTENDEDSEL | LBS_MULTIPLESEL | WS_VSCROLL | LBS_NOINTEGRALHEIGHT,
 			width / 2, topOffset + informationMessagesHeight,
-			width / 2, height,
+			width / 2, height - topOffset - informationMessagesHeight,
 			window,
 			HMENU(),
 			nullptr,
@@ -197,18 +214,7 @@ namespace UI
 			nullptr
 		);
 
-		filesystem::directory_iterator it(currentDirectory);
-
-		for (auto&& i : it)
-		{
-			filesystem::path path = i.path();
-
-			variants[path.filename().generic_wstring()] = path.generic_wstring();
-
-			SendMessageW(availableFiles, LB_ADDSTRING, NULL, reinterpret_cast<LPARAM>(path.filename().generic_wstring().data()));
-		}
-
-		SendMessageW(window, initListBoxes, reinterpret_cast<WPARAM>(availableFiles), reinterpret_cast<LPARAM>(addedFiles));
+		this->setCurrentDirectory(filesystem::current_path());
 	}
 
 	MainWindow::~MainWindow()
@@ -248,8 +254,47 @@ namespace UI
 
 		SetWindowPos(availableArea, HWND_BOTTOM, width / 4 - informationMessagesWidth / 2, topOffset, informationMessagesWidth, informationMessagesHeight, SWP_SHOWWINDOW);
 		SetWindowPos(addedArea, HWND_BOTTOM, width / 2 + width / 4 - informationMessagesWidth / 2, topOffset, informationMessagesWidth, informationMessagesHeight, SWP_SHOWWINDOW);
-		SetWindowPos(availableFiles, HWND_BOTTOM, 0, topOffset + informationMessagesHeight, width / 2, height, SWP_SHOWWINDOW);
-		SetWindowPos(addedFiles, HWND_BOTTOM, width / 2, topOffset + informationMessagesHeight, width / 2, height, SWP_SHOWWINDOW);
+		SetWindowPos(availableFiles, HWND_BOTTOM, 0, topOffset + informationMessagesHeight, width / 2, height - topOffset - informationMessagesHeight, SWP_SHOWWINDOW);
+		SetWindowPos(addedFiles, HWND_BOTTOM, width / 2, topOffset + informationMessagesHeight, width / 2, height - topOffset - informationMessagesHeight, SWP_SHOWWINDOW);
+	}
+
+	void MainWindow::setCurrentDirectory(const wstring& path)
+	{
+		variants.clear();
+
+		LRESULT count = SendMessageW(availableFiles, LB_GETCOUNT, NULL, NULL);
+
+		for (size_t i = 0; i < count; i++)
+		{
+			SendMessageW(availableFiles, LB_DELETESTRING, 0, NULL);
+		}
+
+		count = SendMessageW(addedFiles, LB_GETCOUNT, NULL, NULL);
+
+		for (size_t i = 0; i < count; i++)
+		{
+			SendMessageW(addedFiles, LB_DELETESTRING, 0, NULL);
+		}
+
+		currentDirectory = path;
+
+		filesystem::directory_iterator it(currentDirectory);
+
+		for (auto&& i : it)
+		{
+			filesystem::path path = i.path();
+
+			variants[path.filename().wstring()] = path.wstring();
+
+			SendMessageW(availableFiles, LB_ADDSTRING, NULL, reinterpret_cast<LPARAM>(path.filename().wstring().data()));
+		}
+
+		SendMessageW(window, initListBoxes, reinterpret_cast<WPARAM>(availableFiles), reinterpret_cast<LPARAM>(addedFiles));
+	}
+
+	const filesystem::path& MainWindow::getCurrentDirectory() const
+	{
+		return currentDirectory;
 	}
 }
 
@@ -305,6 +350,11 @@ LRESULT __stdcall MainWindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM
 
 		case decryptFilesE:
 			decryptFilesEvent();
+
+			break;
+
+		case changeDirectoryE:
+			changeDirectory(*ptr);
 
 			break;
 		}
@@ -455,17 +505,18 @@ void encryptFilesEvent(HWND addedListBox)
 			fullPathFiles[i] = variants[files[i]];
 		}
 
-		BinaryFile::encodeBinaryFile(fullPathFiles, L"test.mfa");
+		if (fullPathFiles.size())
+		{
+			BinaryFile::encodeBinaryFile(fullPathFiles, L"test.mfa");
 
-		MessageBoxW(GetParent(addedListBox), L"Архив успешно создан", L"Сообщение", MB_OK);
+			MessageBoxW(GetParent(addedListBox), L"Архив успешно создан", L"Сообщение", MB_OK);
+		}
 	}
 }
 
 void decryptFilesEvent()
 {
 	OPENFILENAMEW file = {};
-
-	std::wstring temp = fileNameBuffer.data();
 
 	file.lStructSize = sizeof(OPENFILENAMEW);
 	file.hwndOwner = nullptr;
@@ -481,9 +532,40 @@ void decryptFilesEvent()
 
 	GetOpenFileNameW(&file);
 
-	std::wstring fileName = file.lpstrFile;
+	if (wcslen(file.lpstrFile))
+	{
+		BinaryFile::decodeBinaryFile(file.lpstrFile);
 
-	BinaryFile::decodeBinaryFile(fileName);
+		MessageBoxW(nullptr, L"Извлечение прошло успешно", L"Сообщение", MB_OK);
+	}
+}
 
-	MessageBoxW(nullptr, L"Извлечение прошло успешно", L"Сообщение", MB_OK);
+void changeDirectory(UI::MainWindow& ref)
+{
+	wstring newPath;
+	newPath.resize(256);
+
+	BROWSEINFOW info = {};
+	info.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
+
+	LPITEMIDLIST test = SHBrowseForFolderW(&info);
+
+	if (test)
+	{
+		SHGetPathFromIDListW(test, newPath.data());
+
+		while (newPath.back() == '\0')
+		{
+			newPath.pop_back();
+		}
+
+		IMalloc* imalloc = nullptr;
+		if (SUCCEEDED(SHGetMalloc(&imalloc)))
+		{
+			imalloc->Free(test);
+			imalloc->Release();
+		}
+
+		ref.setCurrentDirectory(newPath);
+	}
 }
