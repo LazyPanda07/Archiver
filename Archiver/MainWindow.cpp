@@ -10,8 +10,8 @@
 
 using namespace std;
 
-static array<wchar_t, 256> fileNameBuffer{};
-static unordered_map<wstring, wstring> variants;	//file name - absolute path
+array<wchar_t, 256> fileNameBuffer{};
+unordered_map<wstring, wstring> variants;	//file name - absolute path
 
 LRESULT __stdcall MainWindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
@@ -36,6 +36,13 @@ void decryptFilesEvent();
 void changeDirectory(UI::MainWindow& ref);
 
 #pragma endregion
+
+#pragma region Utility
+//If last element is folder recursively add all files in this folder and subfolders
+void isFolder(vector<wstring>& fullPathFiles);
+
+#pragma endregion
+
 
 namespace UI
 {
@@ -215,6 +222,8 @@ namespace UI
 		);
 
 		this->setCurrentDirectory(filesystem::current_path());
+
+		SendMessageW(window, initListBoxes, reinterpret_cast<WPARAM>(availableFiles), reinterpret_cast<LPARAM>(addedFiles));
 	}
 
 	MainWindow::~MainWindow()
@@ -288,8 +297,6 @@ namespace UI
 
 			SendMessageW(availableFiles, LB_ADDSTRING, NULL, reinterpret_cast<LPARAM>(path.filename().wstring().data()));
 		}
-
-		SendMessageW(window, initListBoxes, reinterpret_cast<WPARAM>(availableFiles), reinterpret_cast<LPARAM>(addedFiles));
 	}
 
 	const filesystem::path& MainWindow::getCurrentDirectory() const
@@ -503,6 +510,7 @@ void encryptFilesEvent(HWND addedListBox)
 		for (size_t i = 0; i < elements; i++)
 		{
 			fullPathFiles[i] = variants[files[i]];
+			isFolder(fullPathFiles);
 		}
 
 		if (fullPathFiles.size())
@@ -567,5 +575,23 @@ void changeDirectory(UI::MainWindow& ref)
 		}
 
 		ref.setCurrentDirectory(newPath);
+	}
+}
+
+void isFolder(vector<wstring>& fullPathFiles)
+{
+	filesystem::path lastElement = fullPathFiles.back();
+
+	if (filesystem::is_directory(lastElement))
+	{
+		fullPathFiles.pop_back();
+
+		filesystem::directory_iterator it(lastElement);
+
+		for (auto&& i : it)
+		{
+			fullPathFiles.push_back(i.path());
+			isFolder(fullPathFiles);
+		}
 	}
 }

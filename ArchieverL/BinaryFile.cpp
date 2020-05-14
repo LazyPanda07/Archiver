@@ -83,8 +83,8 @@ namespace BinaryFile
 			{
 				currentFileSize = code.second[i + 1] - code.second[i];
 			}
-			
-			BinaryFileStructure file(currentFileSize % CHAR_BIT, binaryFilesNamesIn[i], currentFileSize % CHAR_BIT ? currentFileSize / CHAR_BIT + 1 : currentFileSize / CHAR_BIT);
+
+			BinaryFileStructure file(currentFileSize % CHAR_BIT, binaryFilesNamesIn[i].substr(binaryFilesNamesIn[i].rfind('\\') + 1), currentFileSize % CHAR_BIT ? currentFileSize / CHAR_BIT + 1 : currentFileSize / CHAR_BIT);
 
 			out.write(reinterpret_cast<const char*>(&file), sizeof(BinaryFileStructure));
 
@@ -177,10 +177,10 @@ namespace BinaryFile
 			in.read(reinterpret_cast<char*>(&file), sizeof(BinaryFileStructure));
 			wstring_view fileName = file.fileName;
 			fileName = fileName.substr(fileName.rfind('/') + 1);
-			
+
 			vector<char> fileData(file.sizeInBytes);
 			in.read(fileData.data(), fileData.size());
-			
+
 			vector<char> resultFileData = tree.decode(fileData, file.importantBitsCount);
 
 			out.open(file.fileName, ios::binary);

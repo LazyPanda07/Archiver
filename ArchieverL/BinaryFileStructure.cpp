@@ -11,6 +11,6 @@ namespace BinaryFile
 	{
 		wmemcpy(this->fileName, fileName.data(), fileName.size());
 
-		this->fileName[58] = L'\0';
+		this->fileName[wcslen(this->fileName)] = L'\0';
 	}
 }
