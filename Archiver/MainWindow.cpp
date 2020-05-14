@@ -550,11 +550,32 @@ void decryptFilesEvent()
 
 void changeDirectory(UI::MainWindow& ref)
 {
+	static constexpr wchar_t pattern[] = L"Текущая директория: ";
+	wchar_t title[MAX_PATH];
+	const wstring path = ref.getCurrentDirectory().wstring();
+
+	wmemcpy(title, pattern, wcslen(pattern));
+	wmemcpy(title + wcslen(pattern), path.data(), path.size());
+
+	title[wcslen(pattern) + path.size()] = 0;
+
 	wstring newPath;
 	newPath.resize(256);
 
 	BROWSEINFOW info = {};
 	info.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
+	info.lpfn = [](HWND hwnd, UINT msg, LPARAM, LPARAM data) -> int
+	{
+		if (msg == BFFM_INITIALIZED)
+		{
+			SendMessageW(hwnd, BFFM_SETSELECTION, true, data);
+		}
+
+		return 0;
+	};
+
+	info.lParam = reinterpret_cast<LPARAM>(path.data());
+	info.lpszTitle = title;
 
 	LPITEMIDLIST test = SHBrowseForFolderW(&info);
 
