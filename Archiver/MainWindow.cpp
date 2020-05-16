@@ -3,6 +3,7 @@
 #include <array>
 #include <string>
 #include <unordered_map>
+#include <stack>
 #include <shlobj.h>
 
 #include "Constants.h"
@@ -39,10 +40,9 @@ void changeDirectory(UI::MainWindow& ref);
 
 #pragma region Utility
 //If last element is folder recursively add all files in this folder and subfolders
-void isFolder(vector<wstring>& fullPathFiles);
+void isFolder(vector<pair<wstring, vector<wstring>>>& fullPathFiles);
 
 #pragma endregion
-
 
 namespace UI
 {
@@ -505,11 +505,12 @@ void encryptFilesEvent(HWND addedListBox)
 			SendMessageW(addedListBox, LB_GETTEXT, i, reinterpret_cast<LPARAM>(files[i].data()));
 		}
 
-		vector<wstring> fullPathFiles(elements);
+		vector<pair<wstring, vector<wstring>>> fullPathFiles;	//files path - files names
+		fullPathFiles.reserve(elements);
 
 		for (size_t i = 0; i < elements; i++)
 		{
-			fullPathFiles[i] = variants[files[i]];
+			fullPathFiles.emplace_back(make_pair(L"", vector<wstring>({ variants[files[i]] })));
 			isFolder(fullPathFiles);
 		}
 
@@ -599,20 +600,48 @@ void changeDirectory(UI::MainWindow& ref)
 	}
 }
 
-void isFolder(vector<wstring>& fullPathFiles)
+void isFolder(vector<pair<wstring, vector<wstring>>>& fullPathFiles)
 {
-	filesystem::path lastElement = fullPathFiles.back();
+	static vector<wstring> folders;
+	const wstring& ref = fullPathFiles.back().second.back();
+
+	filesystem::path lastElement = ref;
 
 	if (filesystem::is_directory(lastElement))
 	{
-		fullPathFiles.pop_back();
+		stack<wstring> subfolders;
+
+		folders.push_back(ref.substr(ref.rfind(L"\\") + 1));
+		fullPathFiles.back().second.pop_back();
 
 		filesystem::directory_iterator it(lastElement);
 
 		for (auto&& i : it)
 		{
-			fullPathFiles.push_back(i.path());
+			if (filesystem::is_directory(i))
+			{
+				subfolders.push(i.path());
+			}
+			else
+			{
+				fullPathFiles.back().second.push_back(i.path());
+			}
+		}
+
+		for (auto&& i : folders)
+		{
+			fullPathFiles.back().first += i + L"\\";
+		}
+
+		fullPathFiles.back().first.pop_back();
+
+		while (subfolders.size())
+		{
+			fullPathFiles.emplace_back(make_pair(L"", vector<wstring>({ subfolders.top() })));
+			subfolders.pop();
 			isFolder(fullPathFiles);
 		}
+
+		folders.pop_back();
 	}
 }

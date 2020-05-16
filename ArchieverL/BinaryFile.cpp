@@ -1,6 +1,7 @@
 #include "BinaryFile.h"
 
 #include <map>
+#include <unordered_map>
 #include <fstream>
 #include <iomanip>
 #include <filesystem>
@@ -16,7 +17,7 @@ using namespace std;
 
 namespace BinaryFile
 {
-	void encodeBinaryFile(const vector<wstring>& binaryFilesNamesIn, const wstring& binaryFileNameOut)
+	void encodeBinaryFile(const vector<pair<wstring, vector<wstring>>>& binaryFilesNamesIn, const wstring& binaryFileNameOut)
 	{
 		CompressedTree tree;
 		vector<char> fileData;
@@ -24,27 +25,36 @@ namespace BinaryFile
 		vector<char> data;
 		ifstream in;
 		ofstream out;
+		short curIndex = 0;
+		unordered_map<short, const wstring*> filePath;
+		unordered_map<unsigned __int32, wstring> fileName;
 
 		sizes.reserve(binaryFilesNamesIn.size());
 
-		for (auto&& i : binaryFilesNamesIn)
+		for (auto&& j : binaryFilesNamesIn)
 		{
-			in.open(i, ios::binary);
-
-			while (!in.eof())
+			for (auto&& i : j.second)
 			{
-				char c;
-				in >> noskipws >> c;
+				in.open(i, ios::binary);
 
-				data.push_back(c);
+				while (!in.eof())
+				{
+					char c;
+					in >> noskipws >> c;
+
+					data.push_back(c);
+				}
+
+				data.pop_back();
+				fileData.insert(end(fileData), begin(data), end(data));
+				sizes.push_back(fileData.size());
+				data.clear();
+
+				in.close();
+
+				fileName.insert(make_pair(curIndex, i.substr(i.rfind('\\') + 1)));
+				filePath.insert(make_pair(curIndex++, &j.first));
 			}
-
-			data.pop_back();
-			fileData.insert(end(fileData), begin(data), end(data));
-			sizes.push_back(fileData.size());
-			data.clear();
-
-			in.close();
 		}
 
 		data.~vector();
@@ -84,7 +94,7 @@ namespace BinaryFile
 				currentFileSize = code.second[i + 1] - code.second[i];
 			}
 
-			BinaryFileStructure file(currentFileSize % CHAR_BIT, binaryFilesNamesIn[i].substr(binaryFilesNamesIn[i].rfind('\\') + 1), currentFileSize % CHAR_BIT ? currentFileSize / CHAR_BIT + 1 : currentFileSize / CHAR_BIT);
+			BinaryFileStructure file(currentFileSize % CHAR_BIT, fileName[i], currentFileSize % CHAR_BIT ? currentFileSize / CHAR_BIT + 1 : currentFileSize / CHAR_BIT, filePath[i]);
 
 			out.write(reinterpret_cast<const char*>(&file), sizeof(BinaryFileStructure));
 
@@ -175,15 +185,18 @@ namespace BinaryFile
 		{
 			BinaryFileStructure file;
 			in.read(reinterpret_cast<char*>(&file), sizeof(BinaryFileStructure));
-			wstring_view fileName = file.fileName;
-			fileName = fileName.substr(fileName.rfind('/') + 1);
+			filesystem::path filePath = file.filePath;
 
 			vector<char> fileData(file.sizeInBytes);
 			in.read(fileData.data(), fileData.size());
 
 			vector<char> resultFileData = tree.decode(fileData, file.importantBitsCount);
 
-			out.open(file.fileName, ios::binary);
+			filesystem::create_directories(filePath);
+
+			filePath.append(file.fileName);
+
+			out.open(filePath, ios::binary);
 			out.write(resultFileData.data(), resultFileData.size());
 			out.close();
 		}
