@@ -8,6 +8,8 @@
 
 #include "Constants.h"
 #include "BinaryFile.h"
+#include "UtilityFunctions.h"
+#include "ArchiveSettingsWindow.h"
 
 using namespace std;
 
@@ -15,13 +17,6 @@ array<wchar_t, 256> fileNameBuffer{};
 unordered_map<wstring, wstring> variants;	//file name - absolute path
 
 LRESULT __stdcall MainWindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
-
-#pragma region Positioning
-POINT centerCoordinates(HWND window = GetDesktopWindow());
-
-POINT centerCoordinates(LONG width, LONG height, HWND window = GetDesktopWindow());
-
-#pragma endregion
 
 #pragma region ButtonsEvents
 void chooseFileEvent(HWND availableListBox, HWND addedListBox);
@@ -320,6 +315,12 @@ LRESULT __stdcall MainWindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM
 			ptr->resize();
 		}
 
+	case WM_ENABLE:
+		if (wparam)
+		{
+			SetWindowPos(hwnd, HWND_TOP, NULL, NULL, NULL, NULL, SWP_NOMOVE | SWP_NOSIZE);
+		}
+
 		return 0;
 
 	case WM_DESTROY:
@@ -382,27 +383,6 @@ LRESULT __stdcall MainWindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM
 	default:
 		return DefWindowProcW(hwnd, msg, wparam, lparam);
 	}
-}
-
-POINT centerCoordinates(HWND window)
-{
-	RECT sizes;
-
-	GetClientRect(window, &sizes);
-
-	return { static_cast<LONG>((sizes.right - sizes.left) * 0.5),static_cast<LONG>((sizes.bottom - sizes.top) * 0.5) };
-}
-
-POINT centerCoordinates(LONG width, LONG height, HWND window)
-{
-	RECT sizes;
-
-	GetClientRect(window, &sizes);
-
-	LONG x = (sizes.right - sizes.left) * 0.5;
-	LONG y = (sizes.bottom - sizes.top) * 0.5;
-
-	return { static_cast<LONG>(x - width * 0.5),static_cast<LONG>(y - height * 0.5) };
 }
 
 void chooseFileEvent(HWND availableListBox, HWND addedListBox)
@@ -516,6 +496,8 @@ void encryptFilesEvent(HWND addedListBox)
 
 		if (fullPathFiles.size())
 		{
+			UI::ArchiveSettingsWindow settings(GetParent(addedListBox));
+
 			BinaryFile::encodeBinaryFile(fullPathFiles, L"test.mfa");
 
 			MessageBoxW(GetParent(addedListBox), L"Архив успешно создан", L"Сообщение", MB_OK);

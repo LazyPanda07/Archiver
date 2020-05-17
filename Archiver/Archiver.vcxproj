@@ -147,8 +147,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ArchiveSettingsWindow.cpp" />
     <ClCompile Include="EntryPoint.cpp" />
     <ClCompile Include="MainWindow.cpp" />
+    <ClCompile Include="UtilityFunctions.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ArchieverL\ArchieverL.vcxproj">
@@ -156,8 +158,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ArchiveSettingsWindow.h" />
     <ClInclude Include="Constants.h" />
     <ClInclude Include="MainWindow.h" />
+    <ClInclude Include="UtilityFunctions.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

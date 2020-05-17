@@ -13,12 +13,18 @@ inline constexpr int informationMessagesHeight = 15;
 
 enum ButtonEvent : __int32
 {
-	addFileE=0xfff,
+	addFileE = 0xfff,
 	deleteFileE,
 	chooseFileE,
 	encryptFilesE,
 	decryptFilesE,
 	changeDirectoryE
+};
+
+enum Events : __int32
+{
+	lockMainWindowE = 0x200,
+	unlockMainWindowE,
 };
 
 inline constexpr int initMainWindowPtr = 0xfffe;
