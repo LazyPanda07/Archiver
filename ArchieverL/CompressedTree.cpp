@@ -20,7 +20,7 @@ CompressedTree::node::node(node* left, node* right) : symbol(NULL), isParent(tru
 
 array<char, 8> CompressedTree::getBits(char c)
 {
-	int mask = 128;
+	__int32 mask = 128;
 	array<char, 8> res;
 
 	for (size_t i = 0; i < CHAR_BIT; i++, mask >>= 1)
@@ -144,7 +144,7 @@ pair<vector<char>, vector<size_t>> CompressedTree::encode(const vector<char>& fi
 
 void print(char c)
 {
-	int mask = 128;
+	__int32 mask = 128;
 
 	for (size_t i = 0; i < CHAR_BIT; i++, mask >>= 1)
 	{

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Windows.h>
+#include <string>
 
 namespace UI
 {
@@ -9,9 +10,19 @@ namespace UI
 	private:
 		HWND wrapper;
 
+		HWND okButton;
+		HWND cancelButton;
+
+		HWND archiveNameHelper;	//static
+		HWND archiveName;
+
 	public:
 		//default width and height is half of main window width and height
-		ArchiveSettingsWindow(HWND mainWindow, int width = 0, int height = 0);
+		ArchiveSettingsWindow(HWND mainWindow, __int32 width = 0, __int32 height = 0);
+
+		HWND getWrapperHWND();
+
+		HWND getArchiveNameHWND();
 
 		~ArchiveSettingsWindow();
 	};

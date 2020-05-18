@@ -5,7 +5,7 @@
 
 using namespace std;
 
-int __stdcall wWinMain(HINSTANCE, HINSTANCE, PWSTR, int)
+__int32 __stdcall wWinMain(HINSTANCE, HINSTANCE, PWSTR, __int32)
 {
 	UI::MainWindow& ref = UI::MainWindow::get();
 

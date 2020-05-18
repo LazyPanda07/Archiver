@@ -65,10 +65,10 @@ namespace BinaryFile
 		out.open(binaryFileNameOut);
 		for (auto i : codes)
 		{
-			out << static_cast<int>(i.first) << " : ";
+			out << static_cast<__int32>(i.first) << " : ";
 			for (auto j : i.second)
 			{
-				out << static_cast<int>(j);
+				out << static_cast<__int32>(j);
 			}
 			out << endl;
 		}
@@ -106,7 +106,7 @@ namespace BinaryFile
 				if (temp.size() == CHAR_BIT)
 				{
 					char oneByte = 0;
-					for (int j = temp.size() - 1, k = 0; j >= 0; j--, k++)
+					for (__int32 j = temp.size() - 1, k = 0; j >= 0; j--, k++)
 					{
 						oneByte += temp[j] << k;
 					}
@@ -117,7 +117,7 @@ namespace BinaryFile
 				else if (cur + 1 == next)
 				{
 					char oneByte = 0;
-					int mask = 128;
+					__int32 mask = 128;
 
 					for (size_t j = 0; j < temp.size(); j++, mask >>= 1)
 					{

@@ -166,8 +166,8 @@ namespace UI
 			L"LISTBOX",
 			nullptr,
 			WS_CHILDWINDOW | WS_VISIBLE | LBS_SORT | LBS_EXTENDEDSEL | LBS_MULTIPLESEL | WS_VSCROLL | LBS_NOINTEGRALHEIGHT,
-			0, topOffset + informationMessagesHeight,
-			width / 2, height - topOffset - informationMessagesHeight,
+			0, controlTopOffset + informationMessagesHeight,
+			width / 2, height - controlTopOffset - informationMessagesHeight,
 			window,
 			HMENU(),
 			nullptr,
@@ -180,8 +180,8 @@ namespace UI
 			L"LISTBOX",
 			nullptr,
 			WS_CHILDWINDOW | WS_VISIBLE | LBS_SORT | LBS_EXTENDEDSEL | LBS_MULTIPLESEL | WS_VSCROLL | LBS_NOINTEGRALHEIGHT,
-			width / 2, topOffset + informationMessagesHeight,
-			width / 2, height - topOffset - informationMessagesHeight,
+			width / 2, controlTopOffset + informationMessagesHeight,
+			width / 2, height - controlTopOffset - informationMessagesHeight,
 			window,
 			HMENU(),
 			nullptr,
@@ -194,7 +194,7 @@ namespace UI
 			L"STATIC",
 			L"Выбор файлов для архивирования",
 			WS_CHILDWINDOW | WS_VISIBLE | SS_CENTER,
-			width / 4 - informationMessagesWidth / 2, topOffset,
+			width / 4 - informationMessagesWidth / 2, controlTopOffset,
 			informationMessagesWidth, informationMessagesHeight,
 			window,
 			HMENU(),
@@ -208,7 +208,7 @@ namespace UI
 			L"STATIC",
 			L"Файлы для архивирования",
 			WS_CHILDWINDOW | WS_VISIBLE | SS_CENTER,
-			width / 2 + width / 4 - informationMessagesWidth / 2, topOffset,
+			width / 2 + width / 4 - informationMessagesWidth / 2, controlTopOffset,
 			informationMessagesWidth, informationMessagesHeight,
 			window,
 			HMENU(),
@@ -256,10 +256,10 @@ namespace UI
 		LONG width = sizes.right - sizes.left;
 		LONG height = sizes.bottom - sizes.top;
 
-		SetWindowPos(availableArea, HWND_BOTTOM, width / 4 - informationMessagesWidth / 2, topOffset, informationMessagesWidth, informationMessagesHeight, SWP_SHOWWINDOW);
-		SetWindowPos(addedArea, HWND_BOTTOM, width / 2 + width / 4 - informationMessagesWidth / 2, topOffset, informationMessagesWidth, informationMessagesHeight, SWP_SHOWWINDOW);
-		SetWindowPos(availableFiles, HWND_BOTTOM, 0, topOffset + informationMessagesHeight, width / 2, height - topOffset - informationMessagesHeight, SWP_SHOWWINDOW);
-		SetWindowPos(addedFiles, HWND_BOTTOM, width / 2, topOffset + informationMessagesHeight, width / 2, height - topOffset - informationMessagesHeight, SWP_SHOWWINDOW);
+		SetWindowPos(availableArea, HWND_BOTTOM, width / 4 - informationMessagesWidth / 2, controlTopOffset, informationMessagesWidth, informationMessagesHeight, SWP_SHOWWINDOW);
+		SetWindowPos(addedArea, HWND_BOTTOM, width / 2 + width / 4 - informationMessagesWidth / 2, controlTopOffset, informationMessagesWidth, informationMessagesHeight, SWP_SHOWWINDOW);
+		SetWindowPos(availableFiles, HWND_BOTTOM, 0, controlTopOffset + informationMessagesHeight, width / 2, height - controlTopOffset - informationMessagesHeight, SWP_SHOWWINDOW);
+		SetWindowPos(addedFiles, HWND_BOTTOM, width / 2, controlTopOffset + informationMessagesHeight, width / 2, height - controlTopOffset - informationMessagesHeight, SWP_SHOWWINDOW);
 	}
 
 	void MainWindow::setCurrentDirectory(const wstring& path)
@@ -402,7 +402,7 @@ void chooseFileEvent(HWND availableListBox, HWND addedListBox)
 			}
 		}
 
-		for (int i = elements - 1; i >= 0; i--)
+		for (__int32 i = elements - 1; i >= 0; i--)
 		{
 			SendMessageW(availableListBox, LB_DELETESTRING, indices[i], NULL);
 		}
@@ -426,7 +426,7 @@ void deleteFileEvent(HWND availableListBox, HWND addedListBox)
 			}
 		}
 
-		for (int i = elements - 1; i >= 0; i--)
+		for (__int32 i = elements - 1; i >= 0; i--)
 		{
 			SendMessageW(addedListBox, LB_DELETESTRING, indices[i], NULL);
 		}
@@ -496,7 +496,11 @@ void encryptFilesEvent(HWND addedListBox)
 
 		if (fullPathFiles.size())
 		{
+			wstring archiveName;
+
 			UI::ArchiveSettingsWindow settings(GetParent(addedListBox));
+
+			return;
 
 			BinaryFile::encodeBinaryFile(fullPathFiles, L"test.mfa");
 
@@ -547,7 +551,7 @@ void changeDirectory(UI::MainWindow& ref)
 
 	BROWSEINFOW info = {};
 	info.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
-	info.lpfn = [](HWND hwnd, UINT msg, LPARAM, LPARAM data) -> int
+	info.lpfn = [](HWND hwnd, UINT msg, LPARAM, LPARAM data) -> __int32
 	{
 		if (msg == BFFM_INITIALIZED)
 		{
