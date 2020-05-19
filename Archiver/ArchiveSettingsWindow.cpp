@@ -1,14 +1,24 @@
 #include "ArchiveSettingsWindow.h"
 
+#include <commctrl.h>
+
 #include "UtilityFunctions.h"
 #include "Constants.h"
 
 using namespace std;
 
+#pragma comment (lib,"Comctl32.lib")
+
+#pragma comment(linker,"\"/manifestdependency:type='win32' \
+name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
+processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
+
 LRESULT __stdcall SettingsProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
 HWND globalMainWindow;
 UI::ArchiveSettingsWindow* globalPtr;
+
+void createProgressBar();
 
 namespace UI
 {
@@ -178,6 +188,7 @@ LRESULT __stdcall SettingsProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM l
 
 		case unlockMainWindowE:
 			EnableWindow(globalMainWindow, true);
+			SetWindowPos(globalMainWindow, HWND_TOP, NULL, NULL, NULL, NULL, SWP_NOMOVE | SWP_NOSIZE);
 
 			break;
 
@@ -186,11 +197,13 @@ LRESULT __stdcall SettingsProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM l
 			GetWindowTextW(globalPtr->getArchiveNameHWND(), globalPtr->getArchiveNameOut().data(), globalPtr->getArchiveNameOut().size());
 			globalPtr->getArchiveNameOut().pop_back();
 			globalPtr->getArchiveNameOut().append(L".mfa");
-			
+
 			globalPtr->ready();
 			globalPtr->synchronize();
 
 			delete globalPtr;
+			
+			createProgressBar();
 
 			break;
 
@@ -210,4 +223,43 @@ LRESULT __stdcall SettingsProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM l
 	default:
 		return DefWindowProcW(hwnd, msg, wparam, lparam);
 	}
+}
+
+void createProgressBar()
+{
+	RECT rcClient;
+	int cyVScroll;
+	HWND progressBar;
+
+	InitCommonControls();
+
+	GetClientRect(globalMainWindow, &rcClient);
+
+	cyVScroll = GetSystemMetrics(SM_CYVSCROLL);
+
+	progressBar = CreateWindowExW
+	(
+		NULL,
+		PROGRESS_CLASS,
+		nullptr,
+		WS_CHILDWINDOW | WS_VISIBLE,
+		rcClient.left, rcClient.bottom - cyVScroll,
+		rcClient.right, cyVScroll,
+		globalMainWindow,
+		HMENU(),
+		nullptr,
+		nullptr
+	);
+
+	SendMessageW(progressBar, PBM_SETRANGE, 0, MAKELPARAM(0, 100));
+
+	SendMessageW(progressBar, PBM_SETSTEP, 10, 0);
+
+	for (size_t i = 0; i < 10; i++)
+	{
+		Sleep(100);
+		SendMessageW(progressBar, PBM_STEPIT, NULL, NULL);
+	}
+
+	SendMessageW(globalMainWindow, progressBarEndE, reinterpret_cast<WPARAM>(progressBar), NULL);
 }

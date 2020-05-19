@@ -319,16 +319,15 @@ LRESULT __stdcall MainWindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM
 			ptr->resize();
 		}
 
-	case WM_ENABLE:
-		if (wparam)
-		{
-			SetWindowPos(hwnd, HWND_TOP, NULL, NULL, NULL, NULL, SWP_NOMOVE | SWP_NOSIZE);
-		}
-
 		return 0;
 
 	case WM_DESTROY:
 		PostQuitMessage(0);
+
+		return 0;
+
+	case progressBarEndE:
+		DestroyWindow(reinterpret_cast<HWND>(wparam));
 
 		return 0;
 
@@ -502,7 +501,7 @@ void encryptFilesEvent(HWND addedListBox)
 		{
 			condition_variable* synchronization = new condition_variable();
 			wstring* archiveName = new wstring();
-			UI::ArchiveSettingsWindow* settings = new UI::ArchiveSettingsWindow(GetParent(addedListBox), *archiveName, *synchronization);	//deleted in ArchiveSettingsWindow
+			UI::ArchiveSettingsWindow* settings = new UI::ArchiveSettingsWindow(GetParent(addedListBox), *archiveName, *synchronization);	//deleted in ArchiveSettingsWindow.cpp
 
 			thread([=]
 				{
