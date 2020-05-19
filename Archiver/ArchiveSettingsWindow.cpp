@@ -12,7 +12,8 @@ UI::ArchiveSettingsWindow* globalPtr;
 
 namespace UI
 {
-	ArchiveSettingsWindow::ArchiveSettingsWindow(HWND mainWindow, __int32 width, __int32 height)
+	ArchiveSettingsWindow::ArchiveSettingsWindow(HWND mainWindow, wstring& archiveNameOut, condition_variable& synchronization, __int32 width, __int32 height) :
+		archiveNameOut(archiveNameOut), synchronization(synchronization), isSet(false)
 	{
 		WNDCLASSEXW dialog = {};
 
@@ -136,9 +137,30 @@ namespace UI
 		return archiveName;
 	}
 
+	void ArchiveSettingsWindow::ready()
+	{
+		isSet = true;
+	}
+
+	bool ArchiveSettingsWindow::isReady()
+	{
+		return isSet;
+	}
+
+	void ArchiveSettingsWindow::synchronize()
+	{
+		synchronization.notify_one();
+	}
+
+	std::wstring& ArchiveSettingsWindow::getArchiveNameOut()
+	{
+		return archiveNameOut;
+	}
+
 	ArchiveSettingsWindow::~ArchiveSettingsWindow()
 	{
 		UnregisterClassW(L"SettingsDialog", nullptr);
+		DestroyWindow(wrapper);
 	}
 }
 
@@ -160,7 +182,15 @@ LRESULT __stdcall SettingsProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM l
 			break;
 
 		case okSettingsE:
+			globalPtr->getArchiveNameOut().resize(GetWindowTextLengthW(globalPtr->getArchiveNameHWND()) + 1);
+			GetWindowTextW(globalPtr->getArchiveNameHWND(), globalPtr->getArchiveNameOut().data(), globalPtr->getArchiveNameOut().size());
+			globalPtr->getArchiveNameOut().pop_back();
+			globalPtr->getArchiveNameOut().append(L".mfa");
+			
+			globalPtr->ready();
+			globalPtr->synchronize();
 
+			delete globalPtr;
 
 			break;
 

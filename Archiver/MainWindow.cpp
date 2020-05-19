@@ -5,6 +5,9 @@
 #include <unordered_map>
 #include <stack>
 #include <shlobj.h>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 #include "Constants.h"
 #include "BinaryFile.h"
@@ -15,6 +18,7 @@ using namespace std;
 
 array<wchar_t, 256> fileNameBuffer{};
 unordered_map<wstring, wstring> variants;	//file name - absolute path
+mutex settingsMutex;
 
 LRESULT __stdcall MainWindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
@@ -496,15 +500,27 @@ void encryptFilesEvent(HWND addedListBox)
 
 		if (fullPathFiles.size())
 		{
-			wstring archiveName;
+			condition_variable* synchronization = new condition_variable();
+			wstring* archiveName = new wstring();
+			UI::ArchiveSettingsWindow* settings = new UI::ArchiveSettingsWindow(GetParent(addedListBox), *archiveName, *synchronization);	//deleted in ArchiveSettingsWindow
 
-			UI::ArchiveSettingsWindow settings(GetParent(addedListBox));
+			thread([=]
+				{
+					UI::ArchiveSettingsWindow* settingsPtr = settings;
+					wstring* archiveNamePtr = archiveName;
+					condition_variable* synchronizationPtr = synchronization;
 
-			return;
+					unique_lock<mutex> lock(settingsMutex);
 
-			BinaryFile::encodeBinaryFile(fullPathFiles, L"test.mfa");
+					synchronization->wait(lock, [&settingsPtr] { return settingsPtr->isReady(); });
 
-			MessageBoxW(GetParent(addedListBox), L"Архив успешно создан", L"Сообщение", MB_OK);
+					BinaryFile::encodeBinaryFile(fullPathFiles, *archiveNamePtr);
+
+					delete archiveNamePtr;
+					delete synchronizationPtr;
+
+					MessageBoxW(GetParent(addedListBox), L"Архив успешно создан", L"Сообщение", MB_OK);
+				}).detach();
 		}
 	}
 }
