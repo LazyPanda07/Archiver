@@ -17,13 +17,14 @@ LRESULT __stdcall SettingsProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM l
 
 HWND globalMainWindow;
 UI::ArchiveSettingsWindow* globalPtr;
+mutex archiveMutex;
 
-void createProgressBar();
+void createProgressBar(utility::SynchronizationHelper* synchronization);
 
 namespace UI
 {
-	ArchiveSettingsWindow::ArchiveSettingsWindow(HWND mainWindow, wstring& archiveNameOut, condition_variable& synchronization, __int32 width, __int32 height) :
-		archiveNameOut(archiveNameOut), synchronization(synchronization), isSet(false)
+	ArchiveSettingsWindow::ArchiveSettingsWindow(HWND mainWindow, wstring& archiveNameOut, utility::SynchronizationHelper* synchronization, __int32 width, __int32 height) :
+		archiveNameOut(archiveNameOut), synchronization(synchronization)
 	{
 		WNDCLASSEXW dialog = {};
 
@@ -149,22 +150,27 @@ namespace UI
 
 	void ArchiveSettingsWindow::ready()
 	{
-		isSet = true;
+		synchronization->sState = true;
 	}
 
 	bool ArchiveSettingsWindow::isReady()
 	{
-		return isSet;
+		return synchronization->sState;
 	}
 
 	void ArchiveSettingsWindow::synchronize()
 	{
-		synchronization.notify_one();
+		synchronization->sVar.notify_one();
 	}
 
 	std::wstring& ArchiveSettingsWindow::getArchiveNameOut()
 	{
 		return archiveNameOut;
+	}
+
+	utility::SynchronizationHelper* ArchiveSettingsWindow::getSynchronizationHelper()
+	{
+		return synchronization;
 	}
 
 	ArchiveSettingsWindow::~ArchiveSettingsWindow()
@@ -201,9 +207,22 @@ LRESULT __stdcall SettingsProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM l
 			globalPtr->ready();
 			globalPtr->synchronize();
 
+			thread
+			([]
+				{
+					createProgressBar(globalPtr->getSynchronizationHelper());
+
+					MSG msg = {};
+
+					while (GetMessageW(&msg, nullptr, NULL, NULL))
+					{
+						TranslateMessage(&msg);
+						DispatchMessageW(&msg);
+					}
+				}
+			).detach();
+
 			delete globalPtr;
-			
-			createProgressBar();
 
 			break;
 
@@ -225,7 +244,7 @@ LRESULT __stdcall SettingsProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM l
 	}
 }
 
-void createProgressBar()
+void createProgressBar(utility::SynchronizationHelper* synchronization)
 {
 	RECT rcClient;
 	int cyVScroll;
@@ -251,15 +270,29 @@ void createProgressBar()
 		nullptr
 	);
 
-	SendMessageW(progressBar, PBM_SETRANGE, 0, MAKELPARAM(0, 100));
+	unique_lock<mutex> dataLock(archiveMutex);
 
-	SendMessageW(progressBar, PBM_SETSTEP, 10, 0);
+	synchronization->sVar.wait(dataLock, [&synchronization] {return synchronization->sState; });
 
-	for (size_t i = 0; i < 10; i++)
+	size_t filesCount = *reinterpret_cast<size_t*>(synchronization->sData);
+
+	dataLock.unlock();
+
+	SendMessageW(progressBar, PBM_SETRANGE, NULL, MAKELPARAM(0, filesCount));
+
+	SendMessageW(progressBar, PBM_SETSTEP, 1, NULL);
+
+	for (size_t i = 0; i < filesCount; i++)
 	{
-		Sleep(100);
+		unique_lock<mutex> lock(archiveMutex);
+
+		synchronization->sVar.wait(lock, [&synchronization] {return synchronization->sState; });
+
 		SendMessageW(progressBar, PBM_STEPIT, NULL, NULL);
+
+		synchronization->sState = false;
+		synchronization->sVar.notify_one();
 	}
 
-	SendMessageW(globalMainWindow, progressBarEndE, reinterpret_cast<WPARAM>(progressBar), NULL);
+	SendMessageW(globalMainWindow, endOfArchivingE, reinterpret_cast<WPARAM>(progressBar), NULL);
 }

@@ -7,6 +7,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Archiver", "Archiver\Archiv
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ArchieverL", "ArchieverL\ArchieverL.vcxproj", "{D0F60F4F-C0A6-42A9-9960-F80CD0EC48BC}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utility", "Utility", "{2B8908C5-D6E9-4B23-9BD7-D63E60A8A333}"
+	ProjectSection(SolutionItems) = preProject
+		Utility\SynchronizationHelper.h = Utility\SynchronizationHelper.h
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64

@@ -17,7 +17,7 @@ using namespace std;
 
 namespace BinaryFile
 {
-	void encodeBinaryFile(const vector<pair<wstring, vector<wstring>>>& binaryFilesNamesIn, const wstring& binaryFileNameOut)
+	void encodeBinaryFile(const vector<pair<wstring, vector<wstring>>>& binaryFilesNamesIn, const wstring& binaryFileNameOut,utility::SynchronizationHelper* synchronization)
 	{
 		CompressedTree tree;
 		vector<char> fileData;
@@ -80,12 +80,18 @@ namespace BinaryFile
 		out.open(binaryFileNameOut, ios::binary | ios::app);
 
 		size_t cur = 0;
+		size_t filesCount = code.second.size();
 
-		for (size_t i = 0; i < code.second.size(); i++)
+		synchronization->sData = &filesCount;
+		mutex binaryMutex;
+
+		for (size_t i = 0; i < filesCount; i++)
 		{
 			size_t currentFileSize;
+			synchronization->sState = true;
+			synchronization->sVar.notify_one();
 
-			if (i + 1 == code.second.size())
+			if (i + 1 == filesCount)
 			{
 				currentFileSize = code.first.size() - code.second[i];
 			}
@@ -128,6 +134,10 @@ namespace BinaryFile
 					temp.clear();
 				}
 			}
+
+			unique_lock<mutex> lock(binaryMutex);
+
+			synchronization->sVar.wait(lock, [&synchronization] {return !synchronization->sState; });
 		}
 
 		out.close();

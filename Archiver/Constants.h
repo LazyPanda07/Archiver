@@ -40,7 +40,7 @@ enum Events : __int32
 	unlockMainWindowE,
 	okSettingsE,
 	cancelSettingsE,
-	progressBarEndE
+	endOfArchivingE
 };
 
 inline constexpr __int32 initMainWindowPtr = 0xfffe;

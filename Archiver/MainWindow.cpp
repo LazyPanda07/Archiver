@@ -6,19 +6,17 @@
 #include <stack>
 #include <shlobj.h>
 #include <thread>
-#include <mutex>
-#include <condition_variable>
 
 #include "Constants.h"
 #include "BinaryFile.h"
 #include "UtilityFunctions.h"
 #include "ArchiveSettingsWindow.h"
+#include "../Utility/SynchronizationHelper.h"
 
 using namespace std;
 
 array<wchar_t, 256> fileNameBuffer{};
 unordered_map<wstring, wstring> variants;	//file name - absolute path
-mutex settingsMutex;
 
 LRESULT __stdcall MainWindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
@@ -43,12 +41,14 @@ void isFolder(vector<pair<wstring, vector<wstring>>>& fullPathFiles);
 
 #pragma endregion
 
+mutex settingsMutex;
+
 namespace UI
 {
 	MainWindow::MainWindow()
 	{
 		WNDCLASSEXW wnd = {};
-		POINT windowPos = centerCoordinates(mainWindowWidth, mainWindowHeight);
+		POINT windowPos = utility::centerCoordinates(mainWindowWidth, mainWindowHeight);
 		RECT sizes;
 		LONG width;
 		LONG height;
@@ -326,8 +326,8 @@ LRESULT __stdcall MainWindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM
 
 		return 0;
 
-	case progressBarEndE:
-		DestroyWindow(reinterpret_cast<HWND>(wparam));
+	case endOfArchivingE:
+
 
 		return 0;
 
@@ -499,21 +499,25 @@ void encryptFilesEvent(HWND addedListBox)
 
 		if (fullPathFiles.size())
 		{
-			condition_variable* synchronization = new condition_variable();
+			utility::SynchronizationHelper* synchronization = new utility::SynchronizationHelper();
 			wstring* archiveName = new wstring();
-			UI::ArchiveSettingsWindow* settings = new UI::ArchiveSettingsWindow(GetParent(addedListBox), *archiveName, *synchronization);	//deleted in ArchiveSettingsWindow.cpp
+			UI::ArchiveSettingsWindow* settings = new UI::ArchiveSettingsWindow(GetParent(addedListBox), *archiveName, synchronization);	//deleted in ArchiveSettingsWindow.cpp
 
 			thread([=]
 				{
 					UI::ArchiveSettingsWindow* settingsPtr = settings;
 					wstring* archiveNamePtr = archiveName;
-					condition_variable* synchronizationPtr = synchronization;
+					utility::SynchronizationHelper* synchronizationPtr = synchronization;
 
 					unique_lock<mutex> lock(settingsMutex);
 
-					synchronization->wait(lock, [&settingsPtr] { return settingsPtr->isReady(); });
+					synchronizationPtr->sVar.wait(lock, [&settingsPtr] { return settingsPtr->isReady(); });	//wait for getting archive name from ArchiveSettingsWindow
 
-					BinaryFile::encodeBinaryFile(fullPathFiles, *archiveNamePtr);
+					synchronizationPtr->sState = false;	//init for encode binary function
+
+					BinaryFile::encodeBinaryFile(fullPathFiles, *archiveNamePtr, synchronizationPtr);
+
+					lock.unlock();
 
 					delete archiveNamePtr;
 					delete synchronizationPtr;
